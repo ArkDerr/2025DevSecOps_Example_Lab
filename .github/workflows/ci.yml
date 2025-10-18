@@ -40,7 +40,7 @@ jobs:
         run: snyk auth "${SNYK_TOKEN}"
 
       - name: Snyk test → JSON
-        working-directory: ${{ env.PROJECT_DIR }}
+        working-directory: ./Backend
         continue-on-error: true
         run: |
           chmod +x ./mvnw || true
@@ -52,7 +52,7 @@ jobs:
 
       - name: Snyk summary
         if: always()
-        working-directory: ${{ env.PROJECT_DIR }}
+        working-directory: ./Backend
         run: |
           sudo apt-get update >/dev/null && sudo apt-get install -y jq >/dev/null
           TOTAL=$(jq '.vulnerabilities | length' snyk-report.json 2>/dev/null || echo 0)
