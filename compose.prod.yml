@@ -16,7 +16,7 @@ services:
       # ORACLE_USER: ${ORACLE_USER}
       # ORACLE_PASS: ${ORACLE_PASS}
 
-    # Si necesitas pasar Wallet en runtime, monta un volumen/secret en vez de hornearlo:
+    # Si necesitas pasar Wallet en runtime, monta un volumen/secret:
     # volumes:
     #   - ./secrets/Wallet:/app/Wallet:ro
 

@@ -3,8 +3,6 @@ name: CI - Build, Test & JaCoCo, Snyk y Sonar
 on:
   push:
     branches: [ "**" ]
-  pull_request:
-    branches: [ "**" ]
 
 permissions:
   contents: read
@@ -137,7 +135,7 @@ jobs:
         run: |
           mvn -B -U verify sonar:sonar \
             -Dsonar.organization=arkderr \
-            -Dsonar.projectKey=ArkDerr_2025EjemploDevSecOps_S9 \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECTKEY }} \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=${SONAR_TOKEN} \
             -Dsonar.branch.name=${{ github.ref_name }} \
@@ -146,7 +144,7 @@ jobs:
   container-scan:
     name: Snyk Container (backend)
     runs-on: ubuntu-latest
-    needs: [build-test-coverage]
+    needs: [sonar-analysis]
 
     steps:
       - uses: actions/checkout@v4
