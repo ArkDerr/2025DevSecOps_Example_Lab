@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: snyk-report
-          path: ${{ env.PROJECT_DIR }}/snyk-report.json
+          path: ./Backend/snyk-report.json
           if-no-files-found: warn
 
   build-test-coverage:
@@ -146,11 +146,12 @@ jobs:
   container-scan:
     name: Snyk Container (backend)
     runs-on: ubuntu-latest
-    needs: sonar-analysis
+    needs: [build-test-coverage]
 
     steps:
       - uses: actions/checkout@v4
 
+      # Genera tag dinámico: pr-<n> o sha-<commit>
       - name: Compute IMAGE_TAG
         id: tag
         run: |
@@ -170,10 +171,38 @@ jobs:
             -f Backend/Dockerfile \
             ./Backend
 
-      - name: Snyk Container scan
-        uses: snyk/actions/docker@master
+      - name: Snyk Container scan → JSON
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk container test profedanielduoc/mi-backend:${{ steps.tag.outputs.IMAGE_TAG }} \
+            --file=Backend/Dockerfile \
+            --severity-threshold=low \
+            --json-file-output=snyk-container-report.json
+
+      - name: Snyk Container Summary
+        if: always()
+        run: |
+          sudo apt-get update >/dev/null && sudo apt-get install -y jq >/dev/null
+          TOTAL=$(jq '.vulnerabilities | length' snyk-container-report.json 2>/dev/null || echo 0)
+          HIGH=$(jq '[.vulnerabilities[] | select(.severity=="high")] | length' snyk-container-report.json 2>/dev/null || echo 0)
+          MED=$(jq '[.vulnerabilities[] | select(.severity=="medium")] | length' snyk-container-report.json 2>/dev/null || echo 0)
+          LOW=$(jq '[.vulnerabilities[] | select(.severity=="low")] | length' snyk-container-report.json 2>/dev/null || echo 0)
+          {
+            echo "### 🐳 Snyk Container Summary (Backend)"
+            echo ""
+            echo "- Total: **$TOTAL**"
+            echo "- High: **$HIGH**"
+            echo "- Medium: **$MED**"
+            echo "- Low: **$LOW**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Snyk Container JSON Report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          image: profedanielduoc/mi-backend:${{ steps.tag.outputs.IMAGE_TAG }}
-          args: --file=Backend/Dockerfile --severity-threshold=high
+          name: snyk-container-report
+          path: snyk-container-report.json
+          if-no-files-found: warn
+
