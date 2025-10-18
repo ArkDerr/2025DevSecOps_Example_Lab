@@ -1,14 +1,19 @@
 name: Release - Build & Push (Backend & Frontend)
 
 on:
-  push:
-    branches: [ "main" ]
-    tags: [ "v*" ]
+  workflow_run:
+    workflows: ["CI - Build, Test & JaCoCo, Snyk y Sonar"]
+    types: [completed]
 
 permissions:
   contents: read
   packages: write
   id-token: write
+
+# (Opcional) evita ejecuciones duplicadas del mismo commit
+concurrency:
+  group: release-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
 
 env:
   DOCKER_IMAGE_BACKEND: ${{ vars.DOCKER_IMAGE_BACKEND }}
@@ -16,6 +21,8 @@ env:
 
 jobs:
   build-push:
+    # Solo si el CI terminó OK
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
