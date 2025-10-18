@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: ./Backend
+    container_name: contenedor_backend
+    ports:
+    - "8080:8080"
+    environment:
+      API_KEY: ${API_KEY:-9P9ZtXrN8NZXi0IMsT5d}
+      SPRING_PROFILE_ACTIVE: ${SPRING_PROFILE_ACTIVE:-prod}
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+  
+  frontend:
+    build:
+      context: ./Web
+    container_name: contenedor_frontend
+    depends_on:
+      - backend
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,web_django}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+ 

@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  backend:
+    image: ${DOCKER_IMAGE_BACKEND:-profedanielduoc/mi-backend}:${APP_TAG:-latest}
+    container_name: contenedor_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # --- Backend envs ---
+      API_KEY: ${API_KEY}
+      SPRING_PROFILE_ACTIVE: ${SPRING_PROFILE_ACTIVE:-prod}
+
+      # Si usas Oracle en cloud, mejor inyectar credenciales por env/secret:
+      # ORACLE_USER: ${ORACLE_USER}
+      # ORACLE_PASS: ${ORACLE_PASS}
+
+    # Si necesitas pasar Wallet en runtime, monta un volumen/secret en vez de hornearlo:
+    # volumes:
+    #   - ./secrets/Wallet:/app/Wallet:ro
+
+    healthcheck:
+      test: ["CMD", "sh", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 20s
+      timeout: 3s
+      retries: 5
+
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+
+  frontend:
+    image: ${DOCKER_IMAGE_FRONTEND:-profedanielduoc/mi-frontend}:${APP_TAG:-latest}
+    container_name: contenedor_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      # --- Django / Gunicorn ---
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+
+      # Variables de conexión al backend (si las necesitas en el front)
+      # BACKEND_BASE_URL: ${BACKEND_BASE_URL:-http://backend:8080}
+
+    healthcheck:
+      test: ["CMD", "sh", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8000' || exit 1"]
+      interval: 20s
+      timeout: 3s
+      retries: 5
+
+networks:
+  default:
+    name: devsecops_net

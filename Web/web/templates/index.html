@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DEVOPS</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f3f3f3; text-align: left; }
+    .error { color: #b00020; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Lista de Usuarios</h1>
+  <p>Si ves esto estás dentro de Docker</p>
+
+  <div id="status">Cargando usuarios...</div>
+  <table id="tabla" hidden>
+    <thead>
+      <tr>
+        <th>RUT</th>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Rol</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <script>
+    (async () => {
+      const API_URL = "http://localhost:8080/api/v1/Usuarios";
+      const API_KEY = "9P9ZtXrN8NZXi0IMsT5d"; // tu API key
+
+      const statusEl = document.getElementById("status");
+      const tableEl  = document.getElementById("tabla");
+      const tbodyEl  = document.getElementById("tbody");
+
+      try {
+        const resp = await fetch(API_URL, {
+          method: "GET",
+          headers: {
+            "X-API-KEY": API_KEY
+          }
+        });
+
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status} - ${resp.statusText}`);
+        }
+
+        const data = await resp.json();
+        tbodyEl.innerHTML = "";
+
+        data.forEach(u => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${u.rut ?? ""}</td>
+            <td>${u.nombre ?? ""}</td>
+            <td>${u.mail ?? ""}</td>
+            <td>${u.idrol ?? ""}</td>
+          `;
+          tbodyEl.appendChild(tr);
+        });
+
+        statusEl.textContent = `Usuarios cargados: ${data.length}`;
+        tableEl.hidden = false;
+      } catch (err) {
+        statusEl.innerHTML = `<span class="error">Error al cargar usuarios: ${err.message}</span>`;
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>
