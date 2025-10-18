@@ -93,6 +93,7 @@ jobs:
           cache: maven
 
       - name: Build & Test (with coverage)
+        working-directory: ./Backend
         run: mvn -B -U clean verify
 
       - name: Upload JaCoCo report
@@ -130,6 +131,7 @@ jobs:
           cache: maven
 
       - name: Run SonarCloud Analysis (Maven)
+        working-directory: ./Backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
